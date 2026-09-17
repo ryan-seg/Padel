@@ -423,11 +423,11 @@
             display: flex;
             gap: 6px;
             align-items: stretch;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .player-list-container {
             flex-grow: 1;
-            height: 380px; 
+            height: 340px; 
             overflow-y: scroll;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
@@ -441,7 +441,7 @@
             justify-content: space-between;
             align-items: center;
             width: 26px;
-            height: 380px; 
+            height: 340px; 
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
@@ -479,8 +479,10 @@
             font-weight: bold; color: #3b82f6; z-index: 10;
         }
 
-        .player-row { display: flex; align-items: center; padding: 5px 8px; border-bottom: 1px solid #f1f5f9; gap: 6px; }
+        .player-row { display: flex; align-items: center; padding: 5px 8px; border-bottom: 1px solid #f1f5f9; gap: 6px; transition: background-color 0.2s; }
         .player-row:last-child { border-bottom: none; }
+        .player-row.modified { background-color: #fef9c3; } /* Highlight edited row */
+        .player-row.marked-delete { background-color: #fee2e2; opacity: 0.6; } /* Highlight pending deletion */
         .player-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
         .player-row input[type="text"] { flex-grow: 1; border: 1px solid transparent; background: transparent; font-size: 14px; padding: 3px; border-radius: 4px; }
         .player-row input[type="text"]:focus { border-color: #3b82f6; background: white; }
@@ -489,6 +491,35 @@
 
         .delete-btn { background: transparent; color: #ef4444; border: none; font-size: 16px; cursor: pointer; font-weight: bold; padding: 1px 4px; }
         
+        /* Save Roster Confirmation Button */
+        .save-roster-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .save-roster-btn:hover { background-color: #0369a1; }
+        .save-roster-btn.has-changes {
+            background-color: #eab308;
+            color: #713f12;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
         button.primary { display: block; width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 7px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         button.secondary { display: block; width: 100%; padding: 12px; background-color: #6366f1; color: white; border: none; border-radius: 7px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 12px; }
         .whatsapp-btn { background-color: #25D366; color: white; border: none; border-radius: 7px; padding: 12px; width: 100%; font-size: 16px; font-weight: bold; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -525,7 +556,6 @@
                     <div class="court-selection-box">
                         <div class="court-selection-title">Select Available Courts</div>
                         <div class="court-checkboxes">
-                            <!-- Default 4 Courts Selected (C1 - C4) -->
                             <label class="court-chip"><input type="checkbox" class="court-select-cb" value="1" checked onchange="updatePlayerCounter()"> C1</label>
                             <label class="court-chip"><input type="checkbox" class="court-select-cb" value="2" checked onchange="updatePlayerCounter()"> C2</label>
                             <label class="court-chip"><input type="checkbox" class="court-select-cb" value="3" checked onchange="updatePlayerCounter()"> C3</label>
@@ -655,6 +685,11 @@
                     </div>
                 </div>
 
+                <!-- Confirmation Save Button for Roster Modifications -->
+                <button type="button" id="saveRosterBtn" class="save-roster-btn" onclick="confirmRosterChanges()">
+                    💾 Save Roster Changes
+                </button>
+
                 <button type="button" class="primary" id="generateBtn">Generate Matches</button>
             </div>
         </div>
@@ -762,8 +797,10 @@ function handleRequest() {
         let scriptUrl = "";
         let mixPriorityValue = 50; 
         let rosterFilter = 'all';
+        let pendingDeletions = new Set();
+        let hasUnsavedChanges = false;
 
-        // 24 World Padel Pros Example Roster (Ratings 1.2 to 5.0)
+        // 24 World Padel Pros Example Roster
         const proRoster = [
             { id: '1', name: "Agustín Tapia", rank: 5.0, active: true },
             { id: '2', name: "Arturo Coello", rank: 5.0, active: true },
@@ -813,6 +850,7 @@ function handleRequest() {
         function loadProRoster() {
             if (confirm("Load 24 Padel Pro Stars as example roster? This will overwrite current list.")) {
                 players = [...proRoster];
+                pendingDeletions.clear();
                 savePlayers();
                 renderPlayers();
             }
@@ -1072,7 +1110,6 @@ function handleRequest() {
         }
 
         async function saveToCloud() {
-            syncTableInputsToMemory();
             if (!scriptUrl) {
                 openCloudSettings();
                 return;
@@ -1130,29 +1167,76 @@ function handleRequest() {
         function closeInfo(e, modalId) { document.getElementById(modalId).style.display = 'none'; }
         function savePlayers() { localStorage.setItem('padelPlayers_v8', JSON.stringify(players)); }
 
-        function syncTableInputsToMemory() {
+        // Mark a row as modified when name or rank changes
+        function markRowModified(rowEl) {
+            rowEl.classList.add('modified');
+            setUnsavedState(true);
+        }
+
+        // Flag toggle for active checkbox (saves immediately without requiring confirm)
+        function togglePlayerActive(id, isChecked) {
+            let player = players.find(p => p.id === id);
+            if (player) {
+                player.active = isChecked;
+                savePlayers();
+                updatePlayerCounter();
+            }
+        }
+
+        // Toggle pending deletion state
+        window.removePlayer = function(id, rowEl) {
+            if (pendingDeletions.has(id)) {
+                pendingDeletions.delete(id);
+                rowEl.classList.remove('marked-delete');
+            } else {
+                pendingDeletions.add(id);
+                rowEl.classList.add('marked-delete');
+            }
+            setUnsavedState(true);
+        };
+
+        function setUnsavedState(state) {
+            hasUnsavedChanges = state;
+            const btn = document.getElementById('saveRosterBtn');
+            if (state) {
+                btn.classList.add('has-changes');
+                btn.innerText = "⚠️ Confirm & Save Changes";
+            } else {
+                btn.classList.remove('has-changes');
+                btn.innerText = "💾 Save Roster Changes";
+            }
+        }
+
+        // Confirmation Action to Commit Roster Changes
+        function confirmRosterChanges() {
+            // Apply pending deletions
+            if (pendingDeletions.size > 0) {
+                players = players.filter(p => !pendingDeletions.has(p.id));
+                pendingDeletions.clear();
+            }
+
+            // Sync all active input values into memory
             const rows = document.querySelectorAll('.player-row');
             rows.forEach(row => {
                 const playerId = row.dataset.id;
-                const checkInput = row.querySelector('input[type="checkbox"]');
                 const textInput = row.querySelector('input[type="text"]');
                 const rankInput = row.querySelector('input[type="number"]');
 
                 if (textInput && rankInput) {
-                    const nameVal = textInput.value.trim();
-                    const rankVal = parseFloat(rankInput.value);
-                    const isChecked = checkInput ? checkInput.checked : true;
-
                     let player = players.find(p => p.id === playerId);
                     if (player) {
-                        player.rank = isNaN(rankVal) ? 3.5 : rankVal;
-                        player.active = isChecked;
-                        player.name = nameVal;
+                        player.name = textInput.value.trim();
+                        player.rank = isNaN(parseFloat(rankInput.value)) ? 3.5 : parseFloat(rankInput.value);
                     }
                 }
             });
+
             savePlayers();
-            updatePlayerCounter();
+            if (scriptUrl) saveToCloud();
+            
+            setUnsavedState(false);
+            renderPlayers();
+            alert("Roster changes saved successfully!");
         }
 
         function updatePlayerCounter() {
@@ -1187,7 +1271,6 @@ function handleRequest() {
         }
 
         function exportData() {
-            syncTableInputsToMemory();
             const exportList = players.map(p => ({ id: p.id, name: p.name, rank: p.rank, active: p.active }));
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportList, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -1255,14 +1338,15 @@ function handleRequest() {
 
             filteredPlayers.forEach(player => {
                 const isChecked = player.active ? 'checked' : '';
+                const isPendingDelete = pendingDeletions.has(player.id);
                 const row = document.createElement('div');
-                row.className = 'player-row';
+                row.className = `player-row ${isPendingDelete ? 'marked-delete' : ''}`;
                 row.dataset.id = player.id;
                 row.innerHTML = `
-                    <input type="checkbox" ${isChecked} onchange="syncTableInputsToMemory()">
-                    <input type="text" value="${player.name}" onchange="syncTableInputsToMemory()">
-                    <input type="number" value="${player.rank}" min="0" max="10" step="0.1" onchange="syncTableInputsToMemory()">
-                    <button type="button" class="delete-btn" onclick="removePlayer('${player.id}')" title="Delete">✖</button>
+                    <input type="checkbox" ${isChecked} onchange="togglePlayerActive('${player.id}', this.checked)">
+                    <input type="text" value="${player.name}" oninput="markRowModified(this.closest('.player-row'))">
+                    <input type="number" value="${player.rank}" min="0" max="10" step="0.1" oninput="markRowModified(this.closest('.player-row'))">
+                    <button type="button" class="delete-btn" onclick="removePlayer('${player.id}', this.closest('.player-row'))" title="Delete">✖</button>
                 `;
                 container.appendChild(row);
             });
@@ -1277,22 +1361,15 @@ function handleRequest() {
             const newRank = isNaN(rawRank) ? 3.5 : rawRank;
 
             if (newName === "") return;
-            syncTableInputsToMemory();
 
             players.push({ id: Date.now().toString(), name: newName, rank: newRank, active: true });
+            savePlayers();
             renderPlayers();
 
             nameInput.value = '';
             rankInput.value = '3.5';
             nameInput.focus();
         }
-
-        window.removePlayer = function(id) {
-            if (confirm("Remove this player?")) {
-                players = players.filter(p => p.id !== id);
-                renderPlayers();
-            }
-        };
 
         window.handlePlayerSwap = function(roundIdx, courtIdx, slotKey, selectedPlayerId) {
             currentRoundsData[roundIdx].courts[courtIdx][slotKey] = selectedPlayerId;
@@ -1358,7 +1435,12 @@ function handleRequest() {
         }
 
         function generateTournament() {
-            syncTableInputsToMemory();
+            if (hasUnsavedChanges) {
+                if (confirm("You have unsaved changes in your roster. Save them now before generating?")) {
+                    confirmRosterChanges();
+                }
+            }
+
             const selectedCourtCBs = Array.from(document.querySelectorAll('.court-select-cb:checked'));
             const selectedCourtNumbers = selectedCourtCBs.map(cb => parseInt(cb.value)).sort((a, b) => a - b);
 
@@ -1442,7 +1524,7 @@ function handleRequest() {
                         if (rotation === 0) {
                             t1p1 = courtPlayers[0].id; t1p2 = courtPlayers[3].id; t2p1 = courtPlayers[1].id; t2p2 = courtPlayers[2].id;
                         } else if (rotation === 1) {
-                            t1p1 = courtPlayers[0].id; t1p2 = courtPlayers[2].id; t2p1 = courtPlayers[1].id; t2p3 = courtPlayers[3].id;
+                            t1p1 = courtPlayers[0].id; t1p2 = courtPlayers[2].id; t2p1 = courtPlayers[1].id; t2p2 = courtPlayers[3].id;
                         } else {
                             t1p1 = courtPlayers[0].id; t1p2 = courtPlayers[1].id; t2p1 = courtPlayers[2].id; t2p2 = courtPlayers[3].id;
                         }
@@ -1571,11 +1653,8 @@ function handleRequest() {
                 }
             }
             
-            if (scriptUrl) {
-                saveToCloud();
-            } else {
-                savePlayers();
-            }
+            savePlayers();
+            if (scriptUrl) saveToCloud();
             
             renderPlayers();
             alert(`Success! Updated rankings for ${updatedCount} players.`);
