@@ -481,8 +481,8 @@
 
         .player-row { display: flex; align-items: center; padding: 5px 8px; border-bottom: 1px solid #f1f5f9; gap: 4px; transition: background-color 0.2s; }
         .player-row:last-child { border-bottom: none; }
-        .player-row.modified { background-color: #fef9c3; } /* Highlight edited row */
-        .player-row.marked-delete { background-color: #fee2e2; opacity: 0.6; } /* Highlight pending deletion */
+        .player-row.modified { background-color: #fef9c3; }
+        .player-row.marked-delete { background-color: #fee2e2; opacity: 0.6; }
         .player-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
         .player-row input[type="text"] { flex-grow: 1; border: 1px solid transparent; background: transparent; font-size: 14px; padding: 3px; border-radius: 4px; min-width: 60px; }
         .player-row input[type="text"]:focus { border-color: #3b82f6; background: white; }
@@ -490,7 +490,6 @@
         .player-row input[type="number"]:focus { border-color: #3b82f6; background: white; }
         .delete-btn { background: transparent; color: #ef4444; border: none; font-size: 16px; cursor: pointer; font-weight: bold; padding: 1px 4px; }
         
-        /* Inline Original Value Indicator */
         .orig-val {
             font-size: 11px;
             font-style: italic;
@@ -500,7 +499,7 @@
 
         /* Edit Actions Container */
         .edit-actions-bar {
-            display: none; /* Hidden by default */
+            display: none;
             gap: 10px;
             margin-bottom: 12px;
         }
@@ -702,7 +701,7 @@
                     </div>
                 </div>
 
-                <!-- Edit Actions Bar (Appears only when changes occur) -->
+                <!-- Edit Actions Bar -->
                 <div id="editActionsBar" class="edit-actions-bar">
                     <button type="button" class="save-roster-btn" onclick="confirmRosterChanges()">💾 Save Changes</button>
                     <button type="button" class="undo-btn" onclick="undoRosterChanges()">✖ Undo</button>
@@ -1112,12 +1111,50 @@ function handleRequest() {
             }
         }
 
-        function markRowModified() {
+        // Live input handler (Without destroying DOM focus)
+        function handleInputEdit(rowEl, playerId) {
             if (!hasUnsavedChanges) {
-                rosterBackup = JSON.stringify(players); // Store pristine state before any modifications
+                rosterBackup = JSON.stringify(players); // Save initial backup state
                 setUnsavedState(true);
             }
-            renderPlayers(); // Re-render to show/hide live original values in italics
+
+            const nameInput = rowEl.querySelector('input[type="text"]');
+            const rankInput = rowEl.querySelector('input[type="number"]');
+            const nameSpan = rowEl.querySelector('.orig-name-span');
+            const rankSpan = rowEl.querySelector('.orig-rank-span');
+
+            let player = players.find(p => p.id === playerId);
+            if (!player) return;
+
+            player.name = nameInput.value;
+            player.rank = isNaN(parseFloat(rankInput.value)) ? 3.5 : parseFloat(rankInput.value);
+
+            let backupArr = rosterBackup ? JSON.parse(rosterBackup) : [];
+            let oldP = backupArr.find(b => b.id === playerId);
+
+            let isModified = false;
+
+            if (oldP) {
+                if (oldP.name !== player.name) {
+                    isModified = true;
+                    nameSpan.innerHTML = `(was: <i>${oldP.name}</i>)`;
+                } else {
+                    nameSpan.innerHTML = '';
+                }
+
+                if (oldP.rank !== player.rank) {
+                    isModified = true;
+                    rankSpan.innerHTML = `(was: <i>${oldP.rank}</i>)`;
+                } else {
+                    rankSpan.innerHTML = '';
+                }
+            }
+
+            if (isModified || pendingDeletions.has(playerId)) {
+                rowEl.classList.add('modified');
+            } else {
+                rowEl.classList.remove('modified');
+            }
         }
 
         window.removePlayer = function(id) {
@@ -1263,10 +1300,6 @@ function handleRequest() {
         }
 
         function renderPlayers() {
-            if (hasUnsavedChanges) {
-                syncTableInputsToArray();
-            }
-
             const container = document.getElementById('playerListContainer');
             Array.from(container.children).forEach(child => { if(child.id !== 'loadingOverlay') child.remove(); });
 
@@ -1303,19 +1336,19 @@ function handleRequest() {
                 const isPendingDelete = pendingDeletions.has(player.id);
                 
                 let isModified = false;
-                let nameOrigHtml = '';
-                let rankOrigHtml = '';
+                let nameOrigText = '';
+                let rankOrigText = '';
 
                 if (hasUnsavedChanges && backupArr.length > 0) {
                     let oldP = backupArr.find(b => b.id === player.id);
                     if (oldP) {
                         if (oldP.name !== player.name) {
                             isModified = true;
-                            nameOrigHtml = `<span class="orig-val">(was: <i>${oldP.name}</i>)</span>`;
+                            nameOrigText = `(was: <i>${oldP.name}</i>)`;
                         }
                         if (oldP.rank !== player.rank) {
                             isModified = true;
-                            rankOrigHtml = `<span class="orig-val">(was: <i>${oldP.rank}</i>)</span>`;
+                            rankOrigText = `(was: <i>${oldP.rank}</i>)`;
                         }
                     }
                 }
@@ -1325,10 +1358,10 @@ function handleRequest() {
                 row.dataset.id = player.id;
                 row.innerHTML = `
                     <input type="checkbox" ${isChecked} onchange="togglePlayerActive('${player.id}', this.checked)">
-                    <input type="text" value="${player.name}" oninput="markRowModified()">
-                    ${nameOrigHtml}
-                    <input type="number" value="${player.rank}" min="0" max="10" step="0.1" oninput="markRowModified()">
-                    ${rankOrigHtml}
+                    <input type="text" value="${player.name}" oninput="handleInputEdit(this.closest('.player-row'), '${player.id}')">
+                    <span class="orig-val orig-name-span">${nameOrigText}</span>
+                    <input type="number" value="${player.rank}" min="0" max="10" step="0.1" oninput="handleInputEdit(this.closest('.player-row'), '${player.id}')">
+                    <span class="orig-val orig-rank-span">${rankOrigText}</span>
                     <button type="button" class="delete-btn" onclick="removePlayer('${player.id}')" title="Delete">✖</button>
                 `;
                 container.appendChild(row);
