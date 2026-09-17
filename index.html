@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Padel Organizer Pro</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 10px; 
+            font-size: 15px; 
+        }
+        h1 { text-align: center; font-size: 24px; margin: 10px 0 15px 0; }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            margin-bottom: 15px;
+        }
+
+        /* Desktop Layout Optimization */
+        @media (min-width: 900px) {
+            body { padding: 20px 40px; max-width: 1400px; margin: 0 auto; }
+            .main-layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+            .player-list-container {
+                height: 300px !important;
+            }
+            .alphabet-bar {
+                height: 300px !important;
+            }
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+            background: #eef2f5;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .control-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .control-group input[type="number"], .control-group select, .control-group input[type="text"], .control-group input[type="date"], .control-group input[type="time"] {
+            padding: 8px 6px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 4px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: center;
+            background: white;
+        }
+
+        .full-width { grid-column: span 2; }
+
+        /* Segmented Button Group for Priority */
+        .priority-segmented {
+            display: flex;
+            width: 100%;
+            background: #cbd5e1;
+            border-radius: 6px;
+            padding: 2px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .priority-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #475569;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+        .priority-btn.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        .court-selection-box {
+            grid-column: span 2;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            margin-top: 2px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .court-selection-title {
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+        .court-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+        }
+        .court-chip {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            background: #f1f5f9;
+            padding: 4px 7px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .court-chip input { cursor: pointer; width: 14px; height: 14px; }
+
+        .info-btn {
+            background: none;
+            border: none;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 0 2px;
+            line-height: 1;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .modal-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+        .modal-card h3 {
+            margin-top: 0;
+            color: #0f172a;
+            font-size: 17px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+        .modal-card p, .modal-card ol {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #475569;
+            margin: 8px 0;
+        }
+        .modal-card ol { padding-left: 18px; }
+        .modal-card li { margin-bottom: 5px; }
+        .modal-card input[type="text"] {
+            width: 100%;
+            padding: 9px;
+            margin-top: 4px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 13px;
+            text-align: center;
+        }
+        .code-block {
+            background: #0f172a;
+            color: #38bdf8;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre;
+            margin: 8px 0;
+            max-height: 160px;
+            border: 1px solid #334155;
+        }
+        .copy-code-btn {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+            margin-top: -6px;
+        }
+        .modal-close, .modal-save, .modal-disconnect {
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 9px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close { background: #64748b; }
+        .modal-save { background: #10b981; }
+        .modal-disconnect { background: #ef4444; width: 100%; margin-top: 8px; }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .sync-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .sync-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .sync-badge.cloud-mode {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        .sync-badge.local-mode {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .sync-group-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 4px 0 3px 2px;
+        }
+        
+        .sync-btn-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .sync-btn {
+            flex: 1;
+            padding: 8px 6px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .cloud-setup-btn { background-color: #8b5cf6; }
+        .cloud-load-btn { background-color: #0284c7; }
+        .cloud-save-btn { background-color: #0ea5e9; }
+        .offline-btn { background-color: #64748b; font-size: 11px; padding: 6px; }
+        
+        .add-player-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            align-items: center;
+        }
+        .add-player-bar input[type="text"] { flex-grow: 1; padding: 7px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .add-player-bar input[type="number"] { width: 65px; padding: 7px 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; text-align: center; }
+        .add-player-bar button { background-color: #3b82f6; color: white; border: none; padding: 7px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; white-space: nowrap; }
+
+        /* Rating Filter Bar */
+        .rating-filter-bar {
+            background: #e0f2fe;
+            border: 1px solid #bae6fd;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #0369a1;
+        }
+        .rating-filter-bar input[type="number"] {
+            width: 55px;
+            padding: 4px;
+            border: 1px solid #0284c7;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+            background: white;
+        }
+
+        /* Search & Filter Controls Above Roster */
+        .roster-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 7px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+        .filter-tabs {
+            display: flex;
+            gap: 4px;
+        }
+        .filter-tab {
+            padding: 3px 8px;
+            background: #e2e8f0;
+            color: #475569;
+            border: none;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .filter-tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .roster-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; color: #475569; }
+        .roster-controls { display: flex; align-items: center; gap: 6px; }
+        .uncheck-btn { background: #cbd5e1; color: #334155; border: none; padding: 3px 7px; border-radius: 10px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .uncheck-btn:hover { background: #94a3b8; color: white; }
+        
+        .counter-box {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .player-counter {
+            background: #e2e8f0;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: #1e293b;
+            font-weight: bold;
+        }
+        .player-counter.counter-invalid {
+            color: #dc2626 !important;
+            background: #fee2e2 !important;
+            border: 1px solid #fca5a5;
+        }
+        .counter-badge {
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none;
+        }
+        .counter-badge.warn-needed {
+            display: inline-block;
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+        }
+        .counter-badge.warn-excess {
+            display: inline-block;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Synchronized Roster and Alphabet Bar Heights */
+        .roster-wrapper {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+            margin-bottom: 12px;
+        }
+        .player-list-container {
+            flex-grow: 1;
+            height: 380px; 
+            overflow-y: scroll;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: white;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+        .alphabet-bar {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            width: 26px;
+            height: 380px; 
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 4px 0;
+            box-sizing: border-box;
+            user-select: none;
+            touch-action: none;
+            -webkit-user-select: none;
+        }
+        .alpha-letter {
+            font-size: 11px;
+            font-weight: bold;
+            color: #475569;
+            cursor: pointer;
+            line-height: 1;
+            width: 100%;
+            text-align: center;
+            padding: 1px 0;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .alpha-letter:hover, .alpha-letter:active {
+            color: #2563eb;
+            font-size: 13px;
+            background: #dbeafe;
+            border-radius: 3px;
+        }
+        
+        #loadingOverlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: bold; color: #3b82f6; z-index: 10;
+        }
+
+        .player-row { display: flex; align-items: center; padding: 5px 8px; border-bottom: 1px solid #f1f5f9; gap: 6px; }
+        .player-row:last-child { border-bottom: none; }
+        .player-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .player-row input[type="text"] { flex-grow: 1; border: 1px solid transparent; background: transparent; font-size: 14px; padding: 3px; border-radius: 4px; }
+        .player-row input[type="text"]:focus { border-color: #3b82f6; background: white; }
+        .player-row input[type="number"] { width: 50px; border: 1px solid transparent; background: transparent; font-size: 14px; text-align: center; padding: 3px; border-radius: 4px; }
+        .player-row input[type="number"]:focus { border-color: #3b82f6; background: white; }
+
+        .delete-btn { background: transparent; color: #ef4444; border: none; font-size: 16px; cursor: pointer; font-weight: bold; padding: 1px 4px; }
+        
+        button.primary { display: block; width: 100%; padding: 14px; background-color: #10b981; color: white; border: none; border-radius: 7px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        button.secondary { display: block; width: 100%; padding: 12px; background-color: #6366f1; color: white; border: none; border-radius: 7px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 12px; }
+        .whatsapp-btn { background-color: #25D366; color: white; border: none; border-radius: 7px; padding: 12px; width: 100%; font-size: 16px; font-weight: bold; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .round-container { border: 2px solid #333; border-radius: 8px; padding: 10px; margin-bottom: 15px; background: #fff; }
+        .round-title { background: #333; color: white; padding: 6px; margin: -10px -10px 10px -10px; border-radius: 5px 5px 0 0; text-align: center; font-size: 16px; }
+        .courts-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 900px) {
+            .courts-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+        }
+        .court { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 7px; padding: 8px; }
+        .court-title { color: #0f172a; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; font-size: 15px; text-align: center; }
+        .balance-summary { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 4px; border-radius: 5px; font-size: 11px; text-align: center; margin-bottom: 8px; font-weight: 600; }
+        .team-box { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+        .player-select { padding: 6px; border-radius: 5px; border: 1px solid #cbd5e1; background: #e0f2fe; font-size: 14px; font-weight: 500; width: 100%; }
+        .team-two-select { background: #fce7f3; }
+        .player-select.duplicate-error { border: 2px solid #ef4444 !important; background-color: #fee2e2 !important; color: #991b1b !important; font-weight: bold; }
+        .score-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1; font-size: 13px; }
+        .score-row input { width: 45px; padding: 4px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        .vs { text-align: center; font-weight: bold; color: #94a3b8; font-size: 11px; }
+        .warning-banner { background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 6px; border-radius: 5px; font-size: 12px; text-align: center; margin-bottom: 8px; font-weight: bold; }
+        .benched { background: #fef3c7; color: #92400e; padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 13px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h1>🎾 Padel Organizer Pro</h1>
+
+    <div class="card">
+        <div class="main-layout">
+            <!-- Left Column: Settings & Sync -->
+            <div class="left-col">
+                <div class="controls">
+                    <div class="court-selection-box">
+                        <div class="court-selection-title">Select Available Courts</div>
+                        <div class="court-checkboxes">
+                            <!-- Default 4 Courts Selected (C1 - C4) -->
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="1" checked onchange="updatePlayerCounter()"> C1</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="2" checked onchange="updatePlayerCounter()"> C2</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="3" checked onchange="updatePlayerCounter()"> C3</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="4" checked onchange="updatePlayerCounter()"> C4</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="5" onchange="updatePlayerCounter()"> C5</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="6" onchange="updatePlayerCounter()"> C6</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="7" onchange="updatePlayerCounter()"> C7</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="8" onchange="updatePlayerCounter()"> C8</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="9" onchange="updatePlayerCounter()"> C9</label>
+                            <label class="court-chip"><input type="checkbox" class="court-select-cb" value="10" onchange="updatePlayerCounter()"> C10</label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="sessionDate">Date</label>
+                        <input type="date" id="sessionDate">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="roundsCount">Total Games</label>
+                        <input type="number" id="roundsCount" min="1" max="20" value="2">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="startTime">Start Time</label>
+                        <input type="time" id="startTime" value="09:00">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="finishTime">Finish Time</label>
+                        <input type="time" id="finishTime" value="10:00">
+                    </div>
+
+                    <div class="control-group full-width">
+                        <label for="gameDuration">Game Length (mins)</label>
+                        <input type="number" id="gameDuration" min="1" max="120" step="5" value="30">
+                    </div>
+
+                    <!-- Segmented Priority Selector (Default: Balanced) -->
+                    <div class="control-group full-width">
+                        <label>
+                            Match Priority Style
+                            <button type="button" class="info-btn" onclick="showControlInfo('slider')">ℹ️</button>
+                        </label>
+                        <div class="priority-segmented">
+                            <button type="button" class="priority-btn" onclick="setPriority(0, this)">🎯 Skill</button>
+                            <button type="button" class="priority-btn active" onclick="setPriority(50, this)">⚖️ Balanced</button>
+                            <button type="button" class="priority-btn" onclick="setPriority(100, this)">🔄 Max Mix</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sync Controls -->
+                <div class="sync-section">
+                    <div id="modeBadge" class="sync-badge local-mode">
+                        <span id="modeBadgeText">📱 Storage Mode: Offline (Local Only)</span>
+                    </div>
+
+                    <div class="sync-group-title">☁️ Primary: Google Sheet Cloud Sync</div>
+                    <div class="sync-btn-row">
+                        <button type="button" class="sync-btn cloud-setup-btn" onclick="openCloudSettings()">⚙️ Connect Script URL</button>
+                        <button type="button" id="cloudLoadBtn" class="sync-btn cloud-load-btn" onclick="manualLoadFromCloud()">📥 Load from Cloud</button>
+                        <button type="button" id="cloudSaveBtn" class="sync-btn cloud-save-btn" onclick="saveToCloud()">💾 Save to Cloud</button>
+                    </div>
+
+                    <div class="sync-group-title" style="margin-top: 8px;">💾 Backup: Offline File Storage</div>
+                    <div class="sync-btn-row">
+                        <button type="button" class="sync-btn offline-btn" onclick="exportData()">📤 Export Backup</button>
+                        <button type="button" class="sync-btn offline-btn" onclick="document.getElementById('importFile').click()">📥 Import Backup</button>
+                        <button type="button" class="sync-btn offline-btn" style="background-color: #0284c7;" onclick="loadProRoster()">🎾 Load Pro Stars</button>
+                        <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Roster & Match Generator -->
+            <div class="right-col">
+                <div class="add-player-bar">
+                    <input type="text" id="newPlayerName" placeholder="Player name">
+                    <input type="number" id="newPlayerRank" placeholder="Rank (0-10)" min="0" max="10" step="0.1" value="3.5">
+                    <button type="button" id="addBtn">+ Add</button>
+                </div>
+
+                <!-- Rating Range Filter -->
+                <div class="rating-filter-bar">
+                    <span>Filter Rank:</span>
+                    <div>
+                        <label>Min</label>
+                        <input type="number" id="filterMinRank" min="0" max="10" step="0.1" placeholder="1.0" oninput="renderPlayers()">
+                    </div>
+                    <div>
+                        <label>Max</label>
+                        <input type="number" id="filterMaxRank" min="0" max="10" step="0.1" placeholder="5.0" oninput="renderPlayers()">
+                    </div>
+                    <button type="button" class="uncheck-btn" onclick="resetRankFilter()">Reset</button>
+                </div>
+                
+                <div class="roster-toolbar">
+                    <input type="text" id="rosterSearch" class="search-input" placeholder="🔍 Search players..." oninput="renderPlayers()">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="filter-tabs">
+                            <button type="button" class="filter-tab active" onclick="setRosterFilter('all', this)">All</button>
+                            <button type="button" class="filter-tab" onclick="setRosterFilter('active', this)">Selected</button>
+                            <button type="button" class="filter-tab" onclick="setRosterFilter('inactive', this)">Not Selected</button>
+                        </div>
+                        <div class="roster-controls">
+                            <button type="button" class="uncheck-btn" onclick="uncheckAllPlayers()">Uncheck All</button>
+                            <div class="counter-box">
+                                <span class="player-counter" id="playerCounter">0 / 0 playing</span>
+                                <span class="counter-badge" id="counterBadge"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="roster-wrapper">
+                    <div class="player-list-container" id="playerListContainer">
+                        <div id="loadingOverlay">
+                            <span>🔄 Syncing with Google Sheet...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Vertical Letter Jump Bar -->
+                    <div class="alphabet-bar" id="alphabetBar">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button type="button" class="primary" id="generateBtn">Generate Matches</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsArea"></div>
+
+    <textarea id="clipboardHelper" style="position: absolute; left: -9999px; top: 0; opacity: 0;"></textarea>
+
+    <div id="infoModal" class="modal-overlay" onclick="closeInfo(event, 'infoModal')">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h3 id="infoTitle">Feature Info</h3>
+            <div id="infoBody"></div>
+            <button type="button" class="modal-close" style="width: 100%; margin-top: 15px;" onclick="closeInfo(event, 'infoModal')">Got it</button>
+        </div>
+    </div>
+
+    <!-- Google Apps Script Setup Modal -->
+    <div id="cloudModal" class="modal-overlay" onclick="closeInfo(event, 'cloudModal')">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h3>📊 Google Apps Script Setup Guide</h3>
+            <p>Sync player rosters live using Google Sheets (100% free, zero login for app users).</p>
+            
+            <ol>
+                <li>Open <a href="https://sheets.new" target="_blank">sheets.new</a>. Set Row 1 headers to: <b>ID</b>, <b>Name</b>, <b>Rank</b>, <b>Active</b>. Rename the bottom tab to <b>Roster</b>.</li>
+                <li>In Google Sheets, click <b>Extensions > Apps Script</b>.</li>
+                <li>Delete any code in the editor, paste the script below, and click <b>Save (💾)</b>.</li>
+            </ol>
+
+            <div style="position: relative;">
+                <button type="button" class="copy-code-btn" onclick="copyAppsScriptCode(this)">📋 Copy Script</button>
+                <div class="code-block" id="scriptCodeBlock">/**
+ * @OnlyCurrentDoc
+ */
+
+function doGet(e) {
+  return handleRequest();
+}
+
+function doPost(e) {
+  try {
+    var rawData = "";
+    if (e && e.postData && e.postData.contents) {
+      rawData = e.postData.contents;
+    }
+    if (rawData) {
+      var data = JSON.parse(rawData);
+      if (data.players && Array.isArray(data.players)) {
+        var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Roster");
+        if (!sheet) { sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("Roster"); }
+        sheet.clear();
+        sheet.appendRow(["ID", "Name", "Rank", "Active"]);
+        var rows = data.players.map(function(p) { return [p.id, p.name, p.rank, p.active]; });
+        if (rows.length > 0) { sheet.getRange(2, 1, rows.length, 4).setValues(rows); }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleRequest() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Roster");
+  var players = [];
+  if (sheet) {
+    var data = sheet.getDataRange().getValues();
+    if (data.length > 1) {
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] !== "" && data[i][0] !== undefined) {
+          players.push({
+            id: String(data[i][0]),
+            name: String(data[i][1]),
+            rank: parseFloat(data[i][2]) || 5.0,
+            active: data[i][3] === true || String(data[i][3]).toUpperCase() === "TRUE"
+          });
+        }
+      }
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({ players: players })).setMimeType(ContentService.MimeType.JSON);
+}</div>
+            </div>
+
+            <ol start="4" style="margin-top: 10px;">
+                <li>Click <b>Deploy > New deployment</b> (or Manage deployments). Select <b>Web app</b>.</li>
+                <li>Set <i>Execute as</i>: <b>Me</b> and <i>Who has access</i>: <b>Anyone</b>.</li>
+                <li>Click <b>Deploy</b>, authorize permissions, copy the Web App URL, and paste it below.</li>
+            </ol>
+
+            <label style="margin-top:10px; display:block; font-weight:bold;">Apps Script Web App URL:</label>
+            <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+            
+            <div class="modal-buttons">
+                <button type="button" class="modal-close" onclick="closeInfo(event, 'cloudModal')">Cancel</button>
+                <button type="button" class="modal-save" onclick="saveCloudSettings()">Connect URL</button>
+            </div>
+            <button type="button" id="disconnectBtn" class="modal-disconnect" style="display: none;" onclick="disconnectCloud()">Disconnect Cloud Mode</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let currentRoundsData = []; 
+        let scriptUrl = "";
+        let mixPriorityValue = 50; 
+        let rosterFilter = 'all';
+
+        // 24 World Padel Pros Example Roster (Ratings 1.2 to 5.0)
+        const proRoster = [
+            { id: '1', name: "Agustín Tapia", rank: 5.0, active: true },
+            { id: '2', name: "Arturo Coello", rank: 5.0, active: true },
+            { id: '3', name: "Ale Galán", rank: 4.9, active: true },
+            { id: '4', name: "Federico Chingotto", rank: 4.8, active: true },
+            { id: '5', name: "Ari Sánchez", rank: 4.8, active: true },
+            { id: '6', name: "Paula Josemaría", rank: 4.8, active: true },
+            { id: '7', name: "Bea González", rank: 4.7, active: true },
+            { id: '8', name: "Delfi Brea", rank: 4.7, active: true },
+            { id: '9', name: "Franco Stupaczuk", rank: 4.6, active: true },
+            { id: '10', name: "Martin Di Nenno", rank: 4.5, active: true },
+            { id: '11', name: "Paquito Navarro", rank: 4.4, active: true },
+            { id: '12', name: "Juan Lebrón", rank: 4.4, active: true },
+            { id: '13', name: "Gema Triay", rank: 4.3, active: true },
+            { id: '14', name: "Claudia Fernández", rank: 4.2, active: true },
+            { id: '15', name: "Momo González", rank: 3.9, active: true },
+            { id: '16', name: "Jon Sanz", rank: 3.8, active: true },
+            { id: '17', name: "Marta Ortega", rank: 3.7, active: true },
+            { id: '18', name: "Sofia Araújo", rank: 3.5, active: true },
+            { id: '19', name: "Tolito Aguirre", rank: 3.2, active: true },
+            { id: '20', name: "Gonzalo Alfonso", rank: 3.1, active: true },
+            { id: '21', name: "Alex Ruiz", rank: 2.8, active: true },
+            { id: '22', name: "Fernando Belasteguín", rank: 2.5, active: true },
+            { id: '23', name: "Miguel Lamperti", rank: 1.8, active: true },
+            { id: '24', name: "Sanyo Gutiérrez", rank: 1.2, active: true }
+        ];
+
+        function setPriority(val, btnEl) {
+            mixPriorityValue = val;
+            document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+        }
+
+        function setRosterFilter(filterType, btnEl) {
+            rosterFilter = filterType;
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            renderPlayers();
+        }
+
+        function resetRankFilter() {
+            document.getElementById('filterMinRank').value = '';
+            document.getElementById('filterMaxRank').value = '';
+            renderPlayers();
+        }
+
+        function loadProRoster() {
+            if (confirm("Load 24 Padel Pro Stars as example roster? This will overwrite current list.")) {
+                players = [...proRoster];
+                savePlayers();
+                renderPlayers();
+            }
+        }
+
+        function updateModeBadge() {
+            const badge = document.getElementById('modeBadge');
+            const text = document.getElementById('modeBadgeText');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            if (scriptUrl) {
+                badge.className = "sync-badge cloud-mode";
+                text.innerText = "☁️ Storage Mode: Google Sheet Active";
+                if (disconnectBtn) disconnectBtn.style.display = 'block';
+            } else {
+                badge.className = "sync-badge local-mode";
+                text.innerText = "📱 Storage Mode: Offline (Local Browser)";
+                if (disconnectBtn) disconnectBtn.style.display = 'none';
+            }
+        }
+
+        function getSessionMinutes() {
+            const start = document.getElementById('startTime').value;
+            const finish = document.getElementById('finishTime').value;
+            if (!start || !finish) return 0;
+            const [sh, sm] = start.split(':').map(Number);
+            const [fh, fm] = finish.split(':').map(Number);
+            let mins = (fh * 60 + fm) - (sh * 60 + sm);
+            if (mins < 0) mins += 24 * 60; 
+            return mins;
+        }
+
+        function updateGamesCount() {
+            const totalMins = getSessionMinutes();
+            const duration = parseInt(document.getElementById('gameDuration').value);
+            if (totalMins > 0 && duration > 0) {
+                document.getElementById('roundsCount').value = Math.max(1, Math.floor(totalMins / duration));
+            }
+        }
+
+        function updateGameDuration() {
+            const totalMins = getSessionMinutes();
+            const rounds = parseInt(document.getElementById('roundsCount').value);
+            if (totalMins > 0 && rounds > 0) {
+                document.getElementById('gameDuration').value = Math.max(1, Math.floor(totalMins / rounds));
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const dateInput = document.getElementById('sessionDate');
+            if (dateInput && !dateInput.value) {
+                const today = new Date();
+                const dayOfWeek = today.getDay(); 
+                const daysUntilSaturday = (6 - dayOfWeek + 7) % 7; 
+                const targetDate = new Date(today);
+                targetDate.setDate(today.getDate() + daysUntilSaturday);
+                const year = targetDate.getFullYear();
+                const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+                const day = String(targetDate.getDate()).padStart(2, '0');
+                dateInput.value = `${year}-${month}-${day}`;
+            }
+
+            document.getElementById('startTime').addEventListener('change', updateGamesCount);
+            document.getElementById('finishTime').addEventListener('change', updateGamesCount);
+            document.getElementById('gameDuration').addEventListener('input', updateGamesCount);
+            document.getElementById('roundsCount').addEventListener('input', updateGameDuration);
+            updateGamesCount();
+
+            buildAlphabetBar();
+
+            const savedUrl = localStorage.getItem('padel_script_url');
+            if (savedUrl) {
+                scriptUrl = savedUrl;
+                loadFromCloud();
+            } else {
+                try {
+                    const savedData = localStorage.getItem('padelPlayers_v8');
+                    if (savedData) {
+                        const parsed = JSON.parse(savedData);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            players = parsed;
+                        } else {
+                            players = [...proRoster];
+                        }
+                    } else {
+                        players = [...proRoster];
+                    }
+                } catch (e) { players = [...proRoster]; }
+                renderPlayers();
+            }
+            updateModeBadge();
+
+            document.getElementById('addBtn').addEventListener('click', addPlayer);
+            document.getElementById('generateBtn').addEventListener('click', generateTournament);
+            document.getElementById('newPlayerName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addPlayer();
+            });
+        });
+
+        function buildAlphabetBar() {
+            const bar = document.getElementById('alphabetBar');
+            bar.innerHTML = '';
+
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                const el = document.createElement('span');
+                el.className = 'alpha-letter';
+                el.innerText = letter;
+                el.dataset.letter = letter;
+                bar.appendChild(el);
+            }
+
+            let activeLetter = null;
+
+            function processPointerTarget(clientX, clientY) {
+                const targetEl = document.elementFromPoint(clientX, clientY);
+                if (targetEl && targetEl.classList.contains('alpha-letter')) {
+                    const letter = targetEl.dataset.letter;
+                    if (letter && letter !== activeLetter) {
+                        activeLetter = letter;
+                        scrollToLetter(letter);
+                    }
+                }
+            }
+
+            bar.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                bar.setPointerCapture(e.pointerId);
+                processPointerTarget(e.clientX, e.clientY);
+            });
+
+            bar.addEventListener('pointermove', (e) => {
+                if (bar.hasPointerCapture(e.pointerId)) {
+                    e.preventDefault();
+                    processPointerTarget(e.clientX, e.clientY);
+                }
+            });
+
+            const clearPointer = (e) => {
+                if (bar.hasPointerCapture(e.pointerId)) {
+                    bar.releasePointerCapture(e.pointerId);
+                }
+                activeLetter = null;
+            };
+
+            bar.addEventListener('pointerup', clearPointer);
+            bar.addEventListener('pointercancel', clearPointer);
+        }
+
+        function scrollToLetter(targetLetter) {
+            const container = document.getElementById('playerListContainer');
+            const rows = container.querySelectorAll('.player-row');
+            if (rows.length === 0) return;
+
+            const targetCharCode = targetLetter.charCodeAt(0);
+            let closestRow = null;
+            let smallestDistance = Infinity;
+
+            for (let row of rows) {
+                const nameInput = row.querySelector('input[type="text"]');
+                if (nameInput) {
+                    const name = nameInput.value.trim().toUpperCase();
+                    if (name.length > 0) {
+                        const firstChar = name.charAt(0);
+                        const charCode = firstChar.charCodeAt(0);
+                        
+                        if (firstChar === targetLetter) {
+                            closestRow = row;
+                            break;
+                        }
+                        
+                        const distance = Math.abs(charCode - targetCharCode);
+                        if (distance < smallestDistance) {
+                            smallestDistance = distance;
+                            closestRow = row;
+                        }
+                    }
+                }
+            }
+
+            if (closestRow) {
+                container.scrollTop = closestRow.offsetTop;
+            }
+        }
+
+        function copyAppsScriptCode(btn) {
+            const codeText = document.getElementById('scriptCodeBlock').innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(codeText).then(() => {
+                    btn.innerText = "✅ Copied!";
+                    setTimeout(() => btn.innerText = "📋 Copy Script", 2000);
+                });
+            } else {
+                fallbackCopyTextToClipboard(codeText, btn);
+            }
+        }
+
+        function openCloudSettings() {
+            document.getElementById('scriptUrlInput').value = scriptUrl;
+            updateModeBadge();
+            document.getElementById('cloudModal').style.display = 'flex';
+        }
+
+        function saveCloudSettings() {
+            scriptUrl = document.getElementById('scriptUrlInput').value.trim();
+            localStorage.setItem('padel_script_url', scriptUrl);
+            document.getElementById('cloudModal').style.display = 'none';
+            updateModeBadge();
+            if (scriptUrl) {
+                alert("Connected to Google Apps Script!");
+                loadFromCloud();
+            } else {
+                alert("Cloud sync disabled. Switched to offline local storage.");
+            }
+        }
+
+        function disconnectCloud() {
+            if (confirm("Disconnect from Google Sheet script? The app will return to offline mode.")) {
+                scriptUrl = "";
+                localStorage.removeItem('padel_script_url');
+                document.getElementById('cloudModal').style.display = 'none';
+                updateModeBadge();
+                alert("Disconnected from Cloud. Now in Offline Mode.");
+            }
+        }
+
+        async function manualLoadFromCloud() {
+            if (!scriptUrl) {
+                openCloudSettings();
+                return;
+            }
+            await loadFromCloud();
+            alert("Roster successfully loaded from Google Sheet!");
+        }
+
+        async function loadFromCloud() {
+            if (!scriptUrl) return;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            try {
+                const response = await fetch(scriptUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && Array.isArray(data.players)) {
+                        players = data.players;
+                        localStorage.setItem('padelPlayers_v8', JSON.stringify(players));
+                    }
+                }
+            } catch (error) {
+                console.error("Cloud load failed", error);
+                const savedData = localStorage.getItem('padelPlayers_v8');
+                if (savedData) players = JSON.parse(savedData);
+            }
+
+            document.getElementById('loadingOverlay').style.display = 'none';
+            renderPlayers();
+        }
+
+        async function saveToCloud() {
+            syncTableInputsToMemory();
+            if (!scriptUrl) {
+                openCloudSettings();
+                return;
+            }
+
+            const btn = document.getElementById('cloudSaveBtn');
+            btn.disabled = true;
+            btn.innerText = "💾 Saving...";
+
+            try {
+                localStorage.setItem('padelPlayers_v8', JSON.stringify(players));
+
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ players: players }),
+                    redirect: 'follow'
+                });
+
+                btn.innerText = "✅ Saved!";
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = "💾 Save to Cloud";
+                }, 2000);
+            } catch (error) {
+                console.error(error);
+                btn.innerText = "✅ Saved Locally";
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = "💾 Save to Cloud";
+                }, 2000);
+            }
+        }
+
+        function uncheckAllPlayers() {
+            players.forEach(p => p.active = false);
+            savePlayers();
+            renderPlayers();
+        }
+
+        function showControlInfo(type) {
+            const title = document.getElementById('infoTitle');
+            const body = document.getElementById('infoBody');
+            if (type === 'slider') {
+                title.innerText = "Match Priority Modes";
+                body.innerHTML = `
+                    <p><b>🎯 Skill Matched:</b> Strict skill tiers. Court 1 always gets top 4 ranks; partners rotate standard round-robin.</p>
+                    <p><b>⚖️ Balanced (Default):</b> Balanced skill matches with <i>zero duplicate partnerships</i> across the entire session.</p>
+                    <p><b>🔄 Max Mix:</b> Maximum social rotation across courts, ensuring a new partner every single game.</p>
+                `;
+            }
+            document.getElementById('infoModal').style.display = 'flex';
+        }
+
+        function closeInfo(e, modalId) { document.getElementById(modalId).style.display = 'none'; }
+        function savePlayers() { localStorage.setItem('padelPlayers_v8', JSON.stringify(players)); }
+
+        function syncTableInputsToMemory() {
+            const rows = document.querySelectorAll('.player-row');
+            rows.forEach(row => {
+                const playerId = row.dataset.id;
+                const checkInput = row.querySelector('input[type="checkbox"]');
+                const textInput = row.querySelector('input[type="text"]');
+                const rankInput = row.querySelector('input[type="number"]');
+
+                if (textInput && rankInput) {
+                    const nameVal = textInput.value.trim();
+                    const rankVal = parseFloat(rankInput.value);
+                    const isChecked = checkInput ? checkInput.checked : true;
+
+                    let player = players.find(p => p.id === playerId);
+                    if (player) {
+                        player.rank = isNaN(rankVal) ? 3.5 : rankVal;
+                        player.active = isChecked;
+                        player.name = nameVal;
+                    }
+                }
+            });
+            savePlayers();
+            updatePlayerCounter();
+        }
+
+        function updatePlayerCounter() {
+            const total = players.length;
+            const active = players.filter(p => p.active).length;
+            const counterEl = document.getElementById('playerCounter');
+            const badgeEl = document.getElementById('counterBadge');
+
+            const selectedCourtsCount = document.querySelectorAll('.court-select-cb:checked').length;
+            const targetCount = selectedCourtsCount * 4;
+
+            if (counterEl) {
+                counterEl.innerText = `${active} / ${total} playing`;
+
+                if (selectedCourtsCount > 0 && active !== targetCount) {
+                    counterEl.classList.add('counter-invalid');
+                    badgeEl.className = 'counter-badge';
+                    
+                    if (active < targetCount) {
+                        badgeEl.innerText = `Need ${targetCount - active} more`;
+                        badgeEl.classList.add('warn-needed');
+                    } else {
+                        badgeEl.innerText = `${active - targetCount} too many`;
+                        badgeEl.classList.add('warn-excess');
+                    }
+                } else {
+                    counterEl.classList.remove('counter-invalid');
+                    badgeEl.className = 'counter-badge';
+                    badgeEl.innerText = '';
+                }
+            }
+        }
+
+        function exportData() {
+            syncTableInputsToMemory();
+            const exportList = players.map(p => ({ id: p.id, name: p.name, rank: p.rank, active: p.active }));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportList, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "padel_roster_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = function(e) {
+                    try {
+                        const importedPlayers = JSON.parse(e.target.result);
+                        if (Array.isArray(importedPlayers)) {
+                            players = importedPlayers.map(p => ({
+                                id: p.id || Date.now().toString(),
+                                name: p.name || "Player",
+                                rank: parseFloat(p.rank) || 3.5,
+                                active: p.active !== undefined ? p.active : true
+                            }));
+                            savePlayers();
+                            renderPlayers();
+                            alert("Successfully imported player roster!");
+                        } else { alert("Invalid backup file format."); }
+                    } catch (error) { alert("Could not read file."); }
+                };
+            }
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playerListContainer');
+            Array.from(container.children).forEach(child => { if(child.id !== 'loadingOverlay') child.remove(); });
+
+            const searchTerm = (document.getElementById('rosterSearch')?.value || '').toLowerCase();
+
+            const minRankVal = parseFloat(document.getElementById('filterMinRank')?.value);
+            const maxRankVal = parseFloat(document.getElementById('filterMaxRank')?.value);
+
+            players.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+            let filteredPlayers = players.filter(p => {
+                const matchesSearch = p.name.toLowerCase().includes(searchTerm);
+                
+                let matchesRank = true;
+                if (!isNaN(minRankVal)) matchesRank = matchesRank && p.rank >= minRankVal;
+                if (!isNaN(maxRankVal)) matchesRank = matchesRank && p.rank <= maxRankVal;
+
+                if (rosterFilter === 'active') return matchesSearch && matchesRank && p.active;
+                if (rosterFilter === 'inactive') return matchesSearch && matchesRank && !p.active;
+                return matchesSearch && matchesRank;
+            });
+
+            if (filteredPlayers.length === 0 && document.getElementById('loadingOverlay').style.display === 'none') {
+                const empty = document.createElement('div');
+                empty.style.textAlign = 'center'; empty.style.color = '#888'; empty.style.padding = '20px'; empty.fontSize = '14px';
+                empty.innerText = players.length === 0 ? 'No players yet. Add someone above!' : 'No matching players found.';
+                container.appendChild(empty);
+                updatePlayerCounter();
+                return;
+            }
+
+            filteredPlayers.forEach(player => {
+                const isChecked = player.active ? 'checked' : '';
+                const row = document.createElement('div');
+                row.className = 'player-row';
+                row.dataset.id = player.id;
+                row.innerHTML = `
+                    <input type="checkbox" ${isChecked} onchange="syncTableInputsToMemory()">
+                    <input type="text" value="${player.name}" onchange="syncTableInputsToMemory()">
+                    <input type="number" value="${player.rank}" min="0" max="10" step="0.1" onchange="syncTableInputsToMemory()">
+                    <button type="button" class="delete-btn" onclick="removePlayer('${player.id}')" title="Delete">✖</button>
+                `;
+                container.appendChild(row);
+            });
+            updatePlayerCounter();
+        }
+
+        function addPlayer() {
+            const nameInput = document.getElementById('newPlayerName');
+            const rankInput = document.getElementById('newPlayerRank');
+            const newName = nameInput.value.trim();
+            const rawRank = parseFloat(rankInput.value);
+            const newRank = isNaN(rawRank) ? 3.5 : rawRank;
+
+            if (newName === "") return;
+            syncTableInputsToMemory();
+
+            players.push({ id: Date.now().toString(), name: newName, rank: newRank, active: true });
+            renderPlayers();
+
+            nameInput.value = '';
+            rankInput.value = '3.5';
+            nameInput.focus();
+        }
+
+        window.removePlayer = function(id) {
+            if (confirm("Remove this player?")) {
+                players = players.filter(p => p.id !== id);
+                renderPlayers();
+            }
+        };
+
+        window.handlePlayerSwap = function(roundIdx, courtIdx, slotKey, selectedPlayerId) {
+            currentRoundsData[roundIdx].courts[courtIdx][slotKey] = selectedPlayerId;
+            renderTournamentDisplay();
+        };
+
+        window.copyToWhatsApp = function() {
+            const rawDate = document.getElementById('sessionDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const finishTime = document.getElementById('finishTime').value;
+
+            let formattedDate = rawDate;
+            if (rawDate) {
+                const d = new Date(rawDate);
+                formattedDate = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            }
+
+            let text = "🎾 *Padel Match Schedule* 🎾\n";
+            if (formattedDate) text += `📅 *Date:* ${formattedDate}\n`;
+            if (startTime && finishTime) text += `⏰ *Time:* ${startTime} - ${finishTime}\n`;
+            text += `\n-------------------\n\n`;
+
+            currentRoundsData.forEach((round, rIdx) => {
+                text += `*--- Game ${rIdx + 1} (${round.gameTime}) ---*\n`;
+                round.courts.forEach((c) => {
+                    const p1 = players.find(p => p.id === c.t1p1)?.name || "";
+                    const p2 = players.find(p => p.id === c.t1p2)?.name || "";
+                    const p3 = players.find(p => p.id === c.t2p1)?.name || "";
+                    const p4 = players.find(p => p.id === c.t2p2)?.name || "";
+                    text += `Court ${c.courtNum}: ${p1} & ${p2} 🆚 ${p3} & ${p4}\n`;
+                });
+                if (round.benched.length > 0) {
+                    const bNames = round.benched.map(id => players.find(p => p.id === id)?.name).filter(Boolean).join(", ");
+                    text += `⏱️ Resting: ${bNames}\n`;
+                }
+                text += `\n`;
+            });
+
+            const btn = document.getElementById('copyBtn');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showCopySuccess(btn)).catch(() => fallbackCopyTextToClipboard(text, btn));
+            } else { fallbackCopyTextToClipboard(text, btn); }
+        };
+
+        function fallbackCopyTextToClipboard(text, btn) {
+            const helper = document.getElementById('clipboardHelper');
+            helper.value = text; helper.style.display = 'block'; helper.focus(); helper.select();
+            try {
+                if (document.execCommand('copy')) showCopySuccess(btn);
+                else alert("Could not copy automatically.");
+            } catch (err) { alert("Clipboard access not supported."); }
+            helper.style.display = 'none';
+        }
+
+        function showCopySuccess(btn) {
+            btn.innerHTML = "✅ Copied to Clipboard!";
+            btn.style.backgroundColor = "#128C7E";
+            setTimeout(() => { btn.innerHTML = "📋 Copy for WhatsApp"; btn.style.backgroundColor = "#25D366"; }, 2000);
+        }
+
+        function getPairKey(p1, p2) {
+            return [p1, p2].sort().join('-');
+        }
+
+        function generateTournament() {
+            syncTableInputsToMemory();
+            const selectedCourtCBs = Array.from(document.querySelectorAll('.court-select-cb:checked'));
+            const selectedCourtNumbers = selectedCourtCBs.map(cb => parseInt(cb.value)).sort((a, b) => a - b);
+
+            if (selectedCourtNumbers.length === 0) { alert("Please select at least one court above!"); return; }
+
+            const rounds = parseInt(document.getElementById('roundsCount').value) || 1;
+            const startTimeStr = document.getElementById('startTime').value || "09:00";
+            const gameDurationMin = parseInt(document.getElementById('gameDuration').value) || 30;
+
+            let activePlayers = players.filter(p => p.active).map(p => ({ ...p, gamesPlayed: 0 }));
+            if (activePlayers.length < 4) { alert("You need at least 4 playing members to generate a game."); return; }
+
+            const maxCourtsPossible = Math.floor(activePlayers.length / 4);
+            const actualCourtsToUse = selectedCourtNumbers.slice(0, maxCourtsPossible);
+            const playersNeeded = actualCourtsToUse.length * 4;
+            
+            currentRoundsData = [];
+            let [startH, startM] = startTimeStr.split(':').map(Number);
+            let currentGameMinutes = startH * 60 + startM;
+
+            const varianceWeight = (mixPriorityValue / 100) * 3.0;
+            const previousPartnerships = new Set();
+
+            for (let r = 0; r < rounds; r++) {
+                let h = Math.floor(currentGameMinutes / 60) % 24;
+                let m = currentGameMinutes % 60;
+                let gameTimeString = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                currentGameMinutes += gameDurationMin;
+
+                activePlayers.sort((a, b) => (a.gamesPlayed + Math.random()*0.1) - (b.gamesPlayed + Math.random()*0.1));
+                let playingThisRound = activePlayers.slice(0, playersNeeded);
+                let benchedThisRound = activePlayers.slice(playersNeeded);
+                playingThisRound.forEach(p => p.gamesPlayed++);
+
+                playingThisRound.forEach(p => {
+                    p.tempRank = p.rank + (Math.random() * varianceWeight * 2 - varianceWeight);
+                });
+                playingThisRound.sort((a, b) => b.tempRank - a.tempRank);
+
+                let courtGroups = Array.from({ length: actualCourtsToUse.length }, () => []);
+                for (let i = 0; i < playingThisRound.length; i++) {
+                    courtGroups[Math.floor(i / 4)].push(playingThisRound[i]);
+                }
+
+                let roundCourts = [];
+                for (let c = 0; c < actualCourtsToUse.length; c++) {
+                    const courtNum = actualCourtsToUse[c];
+                    let courtPlayers = courtGroups[c];
+                    courtPlayers.sort((a, b) => b.rank - a.rank);
+
+                    let t1p1, t1p2, t2p1, t2p2;
+
+                    if (mixPriorityValue > 0) {
+                        let possiblePairings = [
+                            { t1: [0, 3], t2: [1, 2] },
+                            { t1: [0, 2], t2: [1, 3] },
+                            { t1: [0, 1], t2: [2, 3] }
+                        ];
+
+                        let bestPairing = possiblePairings[(r + c) % 3];
+                        let lowestRepeatCount = Infinity;
+
+                        for (let pOption of possiblePairings) {
+                            let k1 = getPairKey(courtPlayers[pOption.t1[0]].id, courtPlayers[pOption.t1[1]].id);
+                            let k2 = getPairKey(courtPlayers[pOption.t2[0]].id, courtPlayers[pOption.t2[1]].id);
+                            let repeats = (previousPartnerships.has(k1) ? 1 : 0) + (previousPartnerships.has(k2) ? 1 : 0);
+                            
+                            if (repeats < lowestRepeatCount) {
+                                lowestRepeatCount = repeats;
+                                bestPairing = pOption;
+                            }
+                            if (repeats === 0) break; 
+                        }
+
+                        t1p1 = courtPlayers[bestPairing.t1[0]].id; 
+                        t1p2 = courtPlayers[bestPairing.t1[1]].id; 
+                        t2p1 = courtPlayers[bestPairing.t2[0]].id; 
+                        t2p2 = courtPlayers[bestPairing.t2[1]].id;
+                    } else {
+                        const rotation = r % 3;
+                        if (rotation === 0) {
+                            t1p1 = courtPlayers[0].id; t1p2 = courtPlayers[3].id; t2p1 = courtPlayers[1].id; t2p2 = courtPlayers[2].id;
+                        } else if (rotation === 1) {
+                            t1p1 = courtPlayers[0].id; t1p2 = courtPlayers[2].id; t2p1 = courtPlayers[1].id; t2p3 = courtPlayers[3].id;
+                        } else {
+                            t1p1 = courtPlayers[0].id; t1p2 = courtPlayers[1].id; t2p1 = courtPlayers[2].id; t2p2 = courtPlayers[3].id;
+                        }
+                    }
+
+                    previousPartnerships.add(getPairKey(t1p1, t1p2));
+                    previousPartnerships.add(getPairKey(t2p1, t2p2));
+
+                    roundCourts.push({ courtNum, t1p1, t1p2, t2p1, t2p2, scoreT1: "", scoreT2: "" });
+                }
+
+                let seenInRound = new Set();
+                roundCourts.forEach(c => {
+                    ['t1p1', 't1p2', 't2p1', 't2p2'].forEach(slot => {
+                        let id = c[slot];
+                        if (seenInRound.has(id)) {
+                            let replacement = activePlayers.find(p => !seenInRound.has(p.id) && !benchedThisRound.some(b => b.id === p.id));
+                            if (replacement) {
+                                c[slot] = replacement.id;
+                                seenInRound.add(replacement.id);
+                            }
+                        } else {
+                            seenInRound.add(id);
+                        }
+                    });
+                });
+
+                currentRoundsData.push({ gameTime: gameTimeString, courts: roundCourts, benched: benchedThisRound.map(p => p.id) });
+            }
+
+            renderTournamentDisplay();
+        }
+
+        function renderTournamentDisplay() {
+            const resultsArea = document.getElementById('resultsArea');
+            let fullHtml = `<button id="copyBtn" class="whatsapp-btn" onclick="copyToWhatsApp()">📋 Copy for WhatsApp</button>`;
+            let activePlayerIds = players.filter(p => p.active).map(p => p.id);
+
+            currentRoundsData.forEach((round, rIdx) => {
+                let assignedCounts = {};
+                round.courts.forEach(c => { [c.t1p1, c.t1p2, c.t2p1, c.t2p2].forEach(id => { if (id) assignedCounts[id] = (assignedCounts[id] || 0) + 1; }); });
+
+                fullHtml += `<div class="round-container"><h2 class="round-title">Game ${rIdx + 1} (${round.gameTime})</h2><div class="courts-grid">`;
+
+                round.courts.forEach((c, cIdx) => {
+                    const getSelectClass = (id, baseClass) => (assignedCounts[id] > 1) ? `${baseClass} duplicate-error` : baseClass;
+                    const p1R = players.find(p => p.id === c.t1p1)?.rank || 0;
+                    const p2R = players.find(p => p.id === c.t1p2)?.rank || 0;
+                    const p3R = players.find(p => p.id === c.t2p1)?.rank || 0;
+                    const p4R = players.find(p => p.id === c.t2p2)?.rank || 0;
+                    const t1Avg = ((p1R + p2R) / 2).toFixed(1), t2Avg = ((p3R + p4R) / 2).toFixed(1), diff = Math.abs(t1Avg - t2Avg).toFixed(1);
+
+                    fullHtml += `
+                        <div class="court">
+                            <h3 class="court-title">Court ${c.courtNum}</h3>
+                            <div class="balance-summary">⚖️ T1 Avg: ${t1Avg} | T2 Avg: ${t2Avg} (Diff: ${diff})</div>
+                            <div class="team-box">
+                                <select class="${getSelectClass(c.t1p1, 'player-select')}" onchange="handlePlayerSwap(${rIdx}, ${cIdx}, 't1p1', this.value)">
+                                    ${activePlayerIds.map(id => `<option value="${id}" ${id === c.t1p1 ? 'selected' : ''}>${players.find(p=>p.id===id)?.name} (${players.find(p=>p.id===id)?.rank})</option>`).join('')}
+                                </select>
+                                <select class="${getSelectClass(c.t1p2, 'player-select')}" onchange="handlePlayerSwap(${rIdx}, ${cIdx}, 't1p2', this.value)">
+                                    ${activePlayerIds.map(id => `<option value="${id}" ${id === c.t1p2 ? 'selected' : ''}>${players.find(p=>p.id===id)?.name} (${players.find(p=>p.id===id)?.rank})</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="team-box">
+                                <select class="${getSelectClass(c.t2p1, 'player-select team-two-select')}" onchange="handlePlayerSwap(${rIdx}, ${cIdx}, 't2p1', this.value)">
+                                    ${activePlayerIds.map(id => `<option value="${id}" ${id === c.t2p1 ? 'selected' : ''}>${players.find(p=>p.id===id)?.name} (${players.find(p=>p.id===id)?.rank})</option>`).join('')}
+                                </select>
+                                <select class="${getSelectClass(c.t2p2, 'player-select team-two-select')}" onchange="handlePlayerSwap(${rIdx}, ${cIdx}, 't2p2', this.value)">
+                                    ${activePlayerIds.map(id => `<option value="${id}" ${id === c.t2p2 ? 'selected' : ''}>${players.find(p=>p.id===id)?.name} (${players.find(p=>p.id===id)?.rank})</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="score-row">
+                                <span>Score:</span>
+                                <input type="number" placeholder="T1" value="${c.scoreT1}" onchange="currentRoundsData[${rIdx}].courts[${cIdx}].scoreT1 = this.value">
+                                <span>-</span>
+                                <input type="number" placeholder="T2" value="${c.scoreT2}" onchange="currentRoundsData[${rIdx}].courts[${cIdx}].scoreT2 = this.value">
+                            </div>
+                        </div>`;
+                });
+
+                fullHtml += `</div>`; 
+                let missingPlayers = activePlayerIds.filter(id => !assignedCounts[id] && !round.benched.includes(id));
+                let duplicatePlayers = Object.keys(assignedCounts).filter(id => assignedCounts[id] > 1);
+
+                if (duplicatePlayers.length > 0 || missingPlayers.length > 0) {
+                    let warnMsg = [];
+                    if (duplicatePlayers.length > 0) warnMsg.push(`⚠️ Duplicate player assigned: ${duplicatePlayers.map(id => players.find(p => p.id === id)?.name).join(", ")}`);
+                    if (missingPlayers.length > 0) warnMsg.push(`⚠️ Unassigned player: ${missingPlayers.map(id => players.find(p => p.id === id)?.name).join(", ")}`);
+                    fullHtml += `<div class="warning-banner">${warnMsg.join("<br>")}</div>`;
+                }
+
+                if (round.benched.length > 0) {
+                    fullHtml += `<div class="benched"><strong>Resting this game:</strong><br>${round.benched.map(id => players.find(p => p.id === id)?.name).filter(Boolean).join(", ")}</div>`;
+                }
+                fullHtml += `</div>`;
+            });
+
+            fullHtml += `<button type="button" class="secondary" onclick="applyScoreRankings()">Update Rankings & Finish Session</button>`;
+            resultsArea.innerHTML = fullHtml;
+            setTimeout(() => { resultsArea.scrollIntoView({ behavior: 'smooth' }); }, 100);
+        }
+
+        window.applyScoreRankings = function() {
+            let adjustments = {};
+            currentRoundsData.forEach(round => {
+                round.courts.forEach(c => {
+                    let s1 = parseInt(c.scoreT1), s2 = parseInt(c.scoreT2);
+                    if (!isNaN(s1) && !isNaN(s2) && s1 !== s2) {
+                        let winners = s1 > s2 ? [c.t1p1, c.t1p2] : [c.t2p1, c.t2p2];
+                        let losers = s1 > s2 ? [c.t2p1, c.t2p2] : [c.t1p1, c.t1p2];
+                        let delta = Math.min(Math.abs(s1 - s2), 4) * 0.05;
+                        winners.forEach(id => { adjustments[id] = (adjustments[id] || 0) + delta; });
+                        losers.forEach(id => { adjustments[id] = (adjustments[id] || 0) - delta; });
+                    }
+                });
+            });
+
+            let updatedCount = 0;
+            for (let id in adjustments) {
+                let p = players.find(x => x.id === id);
+                if (p) {
+                    p.rank = Math.min(10, Math.max(0, parseFloat((p.rank + adjustments[id]).toFixed(1))));
+                    updatedCount++;
+                }
+            }
+            
+            if (scriptUrl) {
+                saveToCloud();
+            } else {
+                savePlayers();
+            }
+            
+            renderPlayers();
+            alert(`Success! Updated rankings for ${updatedCount} players.`);
+        };
+    </script>
+</body>
+</html>
